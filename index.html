@@ -50,8 +50,8 @@
         </thead>
         <tbody>
           <tr>
-            <td>1</td>
-            <td ng-if="leap(year)">2</td>
+            <td id="365" ng-class="{'bg-primary':absDate == 365}">1</td>
+            <td id="366" ng-if="leap(year)" ng-class="{'bg-primary':absDate == 366}">2</td>
           </tr>
         </tbody>
       </table>  

@@ -7,8 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
   <!-- CSS -->
-  <link rel="stylesheet" href="assets/css/bootstrap.min.css"
-    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T">
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/css/bootstrap-icons.css">
   <link href="assets/css/style.css" rel="stylesheet" />
 
   <title>Fixed Calendar</title>
@@ -17,7 +17,11 @@
 <body class="bg-dark" ng-controller="MainCtrl" >
   <div class="container">
     <div ng-repeat="year in years">
-      <h1 class="text-light text-center">{{year}}</h1>
+      <h1 class="text-light text-center">
+        <i class="bi bi-caret-left-fill cursor" ng-click="year=year-1"></i>
+          {{year}}
+        <i class="bi bi-caret-right-fill cursor" ng-click="year=year+1"></i>
+      </h1>
       <div ng-repeat="month in months">
         <h1 class="text-light text-center">{{months[$index]}}</h1>
       <table class="table table-dark text-center">
@@ -34,7 +38,11 @@
         </thead>
         <tbody>
           <tr ng-repeat="week in [].constructor(4) track by $index">
-            <td ng-repeat="day in [].constructor(7) track by $index" id="{{$parent.$parent.$index*28 + $parent.$index*7 + $index + 1}}" ng-class="{'bg-primary':$parent.$parent.$index*28 + $parent.$index*7 + $index + 1 == absDate}">{{ ($parent.$index * 7) + $index + 1 }}</td>
+            <td ng-repeat="day in [].constructor(7) track by $index"
+              id="{{$parent.$parent.$index*28 + $parent.$index*7 + $index + 1}}"
+              ng-class="{'bg-primary':$parent.$parent.$index*28 + $parent.$index*7 + $index + 1 == absDate && year == currentYear}">
+                {{ ($parent.$index * 7) + $index + 1 }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -50,8 +58,8 @@
         </thead>
         <tbody>
           <tr>
-            <td id="365" ng-class="{'bg-primary':absDate == 365}">1</td>
-            <td id="366" ng-if="leap(year)" ng-class="{'bg-primary':absDate == 366}">2</td>
+            <td id="365" ng-class="{'bg-primary':absDate == 365 && year == currentYear}">1</td>
+            <td id="366" ng-if="leap(year)" ng-class="{'bg-primary':absDate == 366 && year == currentYear}">2</td>
           </tr>
         </tbody>
       </table>  

@@ -6,7 +6,8 @@ app.controller('MainCtrl', function ($scope, $location, $anchorScroll) {
 
     init = () => {
         var d = new Date();
-        $scope.years.push(d.getFullYear());
+        $scope.currentYear=d.getFullYear();
+        $scope.years.push($scope.currentYear);
         $scope.absDate = getAbsDate(d);
         $scope.scrollToAbsDate($scope.absDate);
     }

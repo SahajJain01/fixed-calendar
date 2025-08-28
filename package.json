@@ -1,0 +1,9 @@
+{
+  "name": "fixed-calendar",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "bun server.js",
+    "start:node": "node server.js"
+  }
+}

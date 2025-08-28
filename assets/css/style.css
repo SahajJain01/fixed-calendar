@@ -1,7 +1,145 @@
-th {
-    width: 14.28%;
+:root {
+    --surface: #0d1114;
+    --card: #151b1f;
+    --border: rgba(255,255,255,0.08);
+    --muted: #93a1ad;
+    --text: #e6edf3;
+    --accent: #1f6feb;
+    --accent-soft: rgba(31, 111, 235, 0.22);
 }
 
-.cursor {
-    cursor: pointer; cursor: hand;
+th { width: 14.28%; }
+
+.cursor { cursor: pointer; }
+
+body.bg-dark { background-color: var(--surface) !important; color: var(--text); }
+
+/* Sticky, touch-friendly year header */
+.year-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: var(--surface);
+    padding: .5rem 0;
+    }
+
+.icon-btn {
+    min-width: 44px; /* comfortable touch target */
+    min-height: 44px;
+    padding: .375rem .5rem;
 }
+
+.year-title {
+    font-size: clamp(1.25rem, 4.5vw, 2rem);
+}
+
+/* Compact grid to fit all months on one screen */
+.months-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .75rem;
+    align-items: stretch;
+    margin-bottom: 1rem;
+}
+
+.month-card {
+    background-color: #1b1f22; /* slightly lighter than body bg-dark */
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: .25rem;
+    padding: .25rem .25rem .5rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.15);
+    height: 100%;
+}
+
+.month-title {
+    margin: .15rem 0 .25rem 0;
+    font-weight: 600;
+    font-size: clamp(.8rem, 2.5vw, 1rem);
+    color: var(--text);
+    text-transform: none;
+}
+
+.month-table {
+    width: 100%;
+    margin-bottom: 0;
+    font-size: clamp(.7rem, 2.6vw, .85rem); /* compact and responsive */
+    flex: 1 1 auto;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.month-table thead th {
+    border: none !important;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.month-table th, .month-table td { padding: .2rem; }
+.month-table td { border: none !important; text-align: center; width: 14.28%; }
+
+.day {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: clamp(22px, 3.2vw, 28px);
+    height: clamp(22px, 3.2vw, 28px);
+    border-radius: 999px;
+    line-height: 1;
+    color: var(--text);
+}
+
+.day.is-today {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: none;
+}
+
+/* Make grid denser on wide screens */
+@media (min-width: 1400px) {
+    .months-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+/* Fall back to 3 columns on narrower screens */
+@media (max-width: 992px) {
+    .months-grid {
+        grid-template-columns: repeat(3, 1fr);
+        height: auto; /* allow vertical scroll on smaller screens */
+    }
+}
+
+/* And 2 columns on very narrow screens */
+@media (max-width: 768px) {
+    .months-grid {
+        grid-template-columns: repeat(2, 1fr);
+        height: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .months-grid {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+/* Tweak table-dark to be flatter and cleaner */
+.table-dark > :not(caption) > * > * {
+    background-color: transparent !important;
+    border-color: var(--border) !important;
+}
+
+.btn.icon-btn, .icon-btn.btn {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.today-btn { border-color: var(--border); }
+
+.year-bar { max-width: 820px; margin: 0 auto; }

@@ -43,7 +43,7 @@
               cat > "$out/bin/${pname}-start" <<'EOF'
               #!/usr/bin/env bash
               set -euo pipefail
-              PORT="${PORT:-${APP_PORT:-3000}}"
+              PORT="''${PORT:-''${APP_PORT:-3000}}"
               export PORT
               # Resolve to store paths at build-time
               exec "@bun@/bin/bun" "@appshare@/server.js" --root "@appshare@/dist"
@@ -80,4 +80,3 @@
       });
     };
 }
-

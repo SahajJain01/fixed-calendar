@@ -38,8 +38,8 @@ jobs:
           export NIX_SSHOPTS="-i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"
           # Preload flake inputs to the remote store to avoid local file:// references
           nix flake archive --to ssh-ng://$SSH_USER@$SSH_HOST
-          # Build directly in the server's Nix store via ssh-ng
-          out_path=$(nix build --no-link --print-out-paths --store ssh-ng://$SSH_USER@$SSH_HOST .#fixed-calendar)
+          # Build the aarch64 package directly in the server's store via ssh-ng
+          out_path=$(nix build --no-link --print-out-paths --store ssh-ng://$SSH_USER@$SSH_HOST .#packages.aarch64-linux.fixed-calendar)
           echo "out_path=$out_path" >> "$GITHUB_OUTPUT"
           echo "Remote built: $out_path"
 

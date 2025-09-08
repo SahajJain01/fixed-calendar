@@ -7,8 +7,14 @@
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-4.5-7952B3?logo=bootstrap&logoColor=white)
 ![Nix](https://img.shields.io/badge/Nix-Flake-7e7eff?logo=nixos&logoColor=white)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
+[![Deploy Status](https://github.com/OWNER/REPO/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/deploy.yml)
+[![Last Commit](https://img.shields.io/github/last-commit/OWNER/REPO)](https://github.com/OWNER/REPO/commits/main)
+
+[![Live](https://img.shields.io/badge/Live-calendar.sahajjain.com-2ea44f)](https://calendar.sahajjain.com)
 
 Interactive visual of the 13×28 International Fixed Calendar with New Year Day(s). Production‑ready build + deploy with Nix Flakes and GitHub Actions.
+
+<sub>Note: replace OWNER/REPO above with your GitHub org/user and repo to activate live badges.</sub>
 
 </div>
 
@@ -51,6 +57,7 @@ Required repository secrets:
 - `NIX_SSH_KEY`: deploy user’s private key (ED25519)
 - `APP_NAME`: systemd user service name (e.g., `fixedcalendar`)
 - `APP_PORT`: port to serve on (e.g., `3000`)
+ - `APP_DOMAIN`: domain routed to this app (e.g., `calendar.example.com`)
 
 Server prerequisites (one‑time):
 - Enable user lingering so the service runs without a login: `sudo loginctl enable-linger <user>`
@@ -64,6 +71,15 @@ Verify on server (as deploy user):
 - `systemctl --user status ${APP_NAME} --no-pager`
 - `journalctl --user -u ${APP_NAME} -e --no-pager`
 - `curl -fsS http://127.0.0.1:${APP_PORT} | head -n1`
+
+## Reverse Proxy (Caddy)
+
+- NixOS enables Caddy and imports per-app vhosts from `/srv/caddy/conf.d/*.caddy`.
+- The deploy workflow writes `/srv/caddy/conf.d/${APP_NAME}.caddy` with:
+  - Host: `${APP_DOMAIN}` (from GitHub Secret)
+  - Upstream: `reverse_proxy 127.0.0.1:${APP_PORT}` (private per-app port)
+  - Compression and basic security headers
+- Ensure DNS for `${APP_DOMAIN}` points to your server. Caddy will request/renew TLS automatically using the email configured in NixOS.
 
 ## Troubleshooting
 
@@ -80,4 +96,3 @@ Verify on server (as deploy user):
 - `scripts/prod.mjs` — Build then run server against `dist/`
 - `flake.nix` — Nix package and start wrapper
 - `.github/workflows/deploy.yml` — CI/CD deploy to NixOS
-

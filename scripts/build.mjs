@@ -1,6 +1,6 @@
 // Build script using Bun.build and Node's fs for copies
 import { rm, mkdir, stat, readdir, copyFile } from 'fs/promises';
-import { constants as fsConstants } from 'fs';
+import { createReadStream, createWriteStream } from 'fs';
 import path from 'path';
 
 const root = path.resolve(import.meta.dir, '..');
@@ -31,7 +31,26 @@ async function copyDir(src, dest) {
     if (entry.isDirectory()) {
       await copyDir(s, d);
     } else if (entry.isFile()) {
-      await copyFile(s, d, fsConstants.COPYFILE_FICLONE_FORCE ?? 0);
+      await copyFileSafe(s, d);
+    }
+  }
+}
+
+async function copyFileSafe(src, dest) {
+  try {
+    await copyFile(src, dest);
+  } catch (err) {
+    if (err && (err.code === 'ENOTSUP' || err.code === 'EXDEV' || err.code === 'EPERM')) {
+      await new Promise((resolve, reject) => {
+        const rs = createReadStream(src);
+        const ws = createWriteStream(dest);
+        rs.on('error', reject);
+        ws.on('error', reject);
+        ws.on('close', resolve);
+        rs.pipe(ws);
+      });
+    } else {
+      throw err;
     }
   }
 }
@@ -56,7 +75,7 @@ export async function build() {
   }
 
   // Copy index.html and assets
-  await copyFile(path.join(root, 'index.html'), path.join(dist, 'index.html'));
+  await copyFileSafe(path.join(root, 'index.html'), path.join(dist, 'index.html'));
   const assetsSrc = path.join(root, 'assets');
   if (await exists(assetsSrc)) {
     await copyDir(assetsSrc, path.join(dist, 'assets'));
@@ -72,4 +91,3 @@ if (import.meta.main) {
     process.exitCode = 1;
   });
 }
-

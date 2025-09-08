@@ -98,9 +98,9 @@ jobs:
           : "${APP_DOMAIN:?APP_DOMAIN not set}"
           : "${APP_PORT:?APP_PORT not set}"
           CADDY_DIR="/srv/caddy/conf.d"
-          sudo mkdir -p "$CADDY_DIR"
+          sudo -n mkdir -p "$CADDY_DIR"
           # Write vhost config for this app
-          sudo tee "$CADDY_DIR/${APP_NAME}.caddy" >/dev/null <<CADDY
+          sudo -n tee "$CADDY_DIR/${APP_NAME}.caddy" >/dev/null <<CADDY
           ${APP_DOMAIN} {
             encode zstd gzip
             reverse_proxy 127.0.0.1:${APP_PORT}
@@ -113,5 +113,5 @@ jobs:
           }
           CADDY
           # Reload Caddy to pick up changes
-          sudo systemctl reload caddy
+          sudo -n /run/current-system/sw/bin/systemctl reload caddy
           EOF

@@ -71,11 +71,9 @@ jobs:
         run: |
           set -euo pipefail
           export SSH="ssh -i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"
-          $SSH "$SSH_USER@$SSH_HOST" bash -s <<'EOF'
+          # Pass vars into remote env; keep heredoc literal
+          $SSH "$SSH_USER@$SSH_HOST" APP_NAME="$APP_NAME" APP_PORT="$APP_PORT" OUT_PATH="$OUT_PATH" bash -s <<'EOF'
           set -euo pipefail
-          APP_NAME="$APP_NAME"
-          APP_PORT="$APP_PORT"
-          OUT_PATH="$OUT_PATH"
           UNIT_DIR="$HOME/.config/systemd/user"
           mkdir -p "$UNIT_DIR"
           cat > "$UNIT_DIR/${APP_NAME}.service" <<UNIT

@@ -17,18 +17,6 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Remote build on server (aarch64)
-        id: remote_build
-        env:
-          SSH_HOST: ${{ secrets.NIX_SSH_HOST }}
-          SSH_USER: ${{ secrets.NIX_SSH_USER }}
-        run: |
-          set -euo pipefail
-          # Build directly in the server's Nix store via ssh-ng
-          out_path=$(nix build --no-link --print-out-paths --store ssh-ng://$SSH_USER@$SSH_HOST .#fixed-calendar)
-          echo "out_path=$out_path" >> "$GITHUB_OUTPUT"
-          echo "Remote built: $out_path"
-
       - name: Prepare SSH
         env:
           SSH_KEY: ${{ secrets.NIX_SSH_KEY }}
@@ -39,6 +27,22 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Remote build on server (aarch64)
+        id: remote_build
+        env:
+          SSH_HOST: ${{ secrets.NIX_SSH_HOST }}
+          SSH_USER: ${{ secrets.NIX_SSH_USER }}
+        run: |
+          set -euo pipefail
+          export NIX_SSHOPTS="-i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"
+          # Preload flake inputs to the remote store to avoid local file:// references
+          nix flake archive --to ssh-ng://$SSH_USER@$SSH_HOST
+          # Build directly in the server's Nix store via ssh-ng
+          out_path=$(nix build --no-link --print-out-paths --store ssh-ng://$SSH_USER@$SSH_HOST .#fixed-calendar)
+          echo "out_path=$out_path" >> "$GITHUB_OUTPUT"
+          echo "Remote built: $out_path"
+
 
       # Copy step not needed when building on the server
 

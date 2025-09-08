@@ -7,14 +7,12 @@
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-4.5-7952B3?logo=bootstrap&logoColor=white)
 ![Nix](https://img.shields.io/badge/Nix-Flake-7e7eff?logo=nixos&logoColor=white)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
-[![Deploy Status](https://github.com/OWNER/REPO/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/deploy.yml)
-[![Last Commit](https://img.shields.io/github/last-commit/OWNER/REPO)](https://github.com/OWNER/REPO/commits/main)
+[![Deploy Status](https://github.com/sahajjain01/fixed-calendar/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/sahajjain01/fixed-calendar/actions/workflows/deploy.yml)
+[![Last Commit](https://img.shields.io/github/last-commit/sahajjain01/fixed-calendar)](https://github.com/sahajjain01/fixed-calendar/commits/main)
 
 [![Live](https://img.shields.io/badge/Live-calendar.sahajjain.com-2ea44f)](https://calendar.sahajjain.com)
 
 Interactive visual of the 13×28 International Fixed Calendar with New Year Day(s). Production‑ready build + deploy with Nix Flakes and GitHub Actions.
-
-<sub>Note: replace OWNER/REPO above with your GitHub org/user and repo to activate live badges.</sub>
 
 </div>
 

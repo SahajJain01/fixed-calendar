@@ -17,11 +17,12 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Build flake package
+      - name: Build flake package (aarch64-linux)
         id: build
         run: |
           set -euo pipefail
-          out_path=$(nix build --no-link --print-out-paths .#fixed-calendar)
+          # Build the ARM package so it matches your NixOS server
+          out_path=$(nix build --no-link --print-out-paths .#packages.aarch64-linux.fixed-calendar)
           echo "out_path=$out_path" >> "$GITHUB_OUTPUT"
           echo "Built: $out_path"
 

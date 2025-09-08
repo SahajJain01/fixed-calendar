@@ -15,7 +15,9 @@
       packages = forEachSystem (system: pkgs:
         let
           pname = "fixed-calendar";
-          bun = pkgs.bun;
+          # Use build-platform Bun for build tools, target-platform Bun for runtime
+          bunBuild = pkgs.buildPackages.bun;
+          bunRuntime = pkgs.bun;
           srcFiltered = pkgs.lib.cleanSource self;
         in {
           ${pname} = pkgs.stdenvNoCC.mkDerivation {
@@ -23,12 +25,12 @@
             version = (self.lastModifiedDate or "0") + "+git";
             src = srcFiltered;
 
-            nativeBuildInputs = [ bun ];
+            nativeBuildInputs = [ bunBuild ];
 
             buildPhase = ''
               export HOME=$TMPDIR
-              bun --version
-              bun run build
+              ${bunBuild}/bin/bun --version
+              ${bunBuild}/bin/bun run build
             '';
 
             installPhase = ''
@@ -49,7 +51,7 @@
               exec "@bun@/bin/bun" "@appshare@/server.js" --root "@appshare@/dist"
               EOF
               substituteInPlace "$out/bin/${pname}-start" \
-                --subst-var-by bun ${bun} \
+                --subst-var-by bun ${bunRuntime} \
                 --subst-var-by appshare "$appshare"
               chmod +x "$out/bin/${pname}-start"
               runHook postInstall

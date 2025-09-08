@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           export NIX_SSHOPTS="-i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"
-          nix copy --to ssh://$SSH_USER@$SSH_HOST "${{ steps.build.outputs.out_path }}"
+          nix copy --to ssh-ng://$SSH_USER@$SSH_HOST --no-check-sigs "${{ steps.build.outputs.out_path }}"
 
       - name: Update user systemd service and restart
         env:
@@ -81,4 +81,3 @@ jobs:
           systemctl --user restart "$APP_NAME"
           systemctl --user status "$APP_NAME" --no-pager -l || true
           EOF
-

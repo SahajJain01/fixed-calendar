@@ -25,6 +25,22 @@ jobs:
           echo "out_path=$out_path" >> "$GITHUB_OUTPUT"
           echo "Built: $out_path"
 
+      - name: Sign build outputs (recursive)
+        env:
+          NIX_SIGNING_KEY: ${{ secrets.NIX_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NIX_SIGNING_KEY:-}" ]; then
+            echo "NIX_SIGNING_KEY not set; skipping signing step." >&2
+          else
+            printf "%s" "$NIX_SIGNING_KEY" > ci-signing.key
+            chmod 600 ci-signing.key
+            nix store sign --recursive --key-file ci-signing.key "${{ steps.build.outputs.out_path }}"
+            echo "Signed store path and closure."
+            echo "Public key (add to server trusted-public-keys):"
+            nix key convert-secret-to-public < ci-signing.key | sed 's/^/  /'
+          fi
+
       - name: Prepare SSH
         env:
           SSH_KEY: ${{ secrets.NIX_SSH_KEY }}
@@ -43,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
           export NIX_SSHOPTS="-i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"
-          nix copy --to ssh-ng://$SSH_USER@$SSH_HOST --no-check-sigs "${{ steps.build.outputs.out_path }}"
+          nix copy --to ssh-ng://$SSH_USER@$SSH_HOST "${{ steps.build.outputs.out_path }}"
 
       - name: Update user systemd service and restart
         env:

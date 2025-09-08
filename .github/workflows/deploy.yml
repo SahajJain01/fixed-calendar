@@ -98,9 +98,9 @@ jobs:
           : "${APP_DOMAIN:?APP_DOMAIN not set}"
           : "${APP_PORT:?APP_PORT not set}"
           CADDY_DIR="/srv/caddy/conf.d"
-          sudo -n mkdir -p "$CADDY_DIR"
-          # Write vhost config for this app
-          sudo -n tee "$CADDY_DIR/${APP_NAME}.caddy" >/dev/null <<CADDY
+          VHOST="$CADDY_DIR/${APP_NAME}.caddy"
+          # Write vhost config for this app (no sudo; dir is writable by deploy user per tmpfiles)
+          cat > "$VHOST" <<CADDY
           ${APP_DOMAIN} {
             encode zstd gzip
             reverse_proxy 127.0.0.1:${APP_PORT}

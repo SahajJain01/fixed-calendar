@@ -59,6 +59,7 @@ jobs:
           # Pass vars into remote env; keep heredoc literal
           $SSH "$SSH_USER@$SSH_HOST" APP_NAME="$APP_NAME" APP_PORT="$APP_PORT" OUT_PATH="$OUT_PATH" bash -s <<'EOF'
           set -euo pipefail
+          : "${APP_PORT:?APP_PORT not set}"
           UNIT_DIR="$HOME/.config/systemd/user"
           mkdir -p "$UNIT_DIR"
           cat > "$UNIT_DIR/${APP_NAME}.service" <<UNIT
@@ -67,6 +68,7 @@ jobs:
           After=network.target
 
           [Service]
+          Environment=HOST=127.0.0.1
           Environment=PORT=${APP_PORT}
           ExecStart=${OUT_PATH}/bin/fixed-calendar-start
           Restart=always
@@ -79,4 +81,37 @@ jobs:
           systemctl --user enable --now "$APP_NAME"
           systemctl --user restart "$APP_NAME"
           systemctl --user status "$APP_NAME" --no-pager -l || true
+          EOF
+
+      - name: Install/Update Caddy vhost and reload
+        env:
+          SSH_HOST: ${{ secrets.NIX_SSH_HOST }}
+          SSH_USER: ${{ secrets.NIX_SSH_USER }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+          APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
+          APP_PORT: ${{ secrets.APP_PORT }}
+        run: |
+          set -euo pipefail
+          export SSH="ssh -i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"
+          $SSH "$SSH_USER@$SSH_HOST" APP_NAME="$APP_NAME" APP_DOMAIN="$APP_DOMAIN" APP_PORT="$APP_PORT" bash -s <<'EOF'
+          set -euo pipefail
+          : "${APP_DOMAIN:?APP_DOMAIN not set}"
+          : "${APP_PORT:?APP_PORT not set}"
+          CADDY_DIR="/srv/caddy/conf.d"
+          sudo mkdir -p "$CADDY_DIR"
+          # Write vhost config for this app
+          sudo tee "$CADDY_DIR/${APP_NAME}.caddy" >/dev/null <<CADDY
+          ${APP_DOMAIN} {
+            encode zstd gzip
+            reverse_proxy 127.0.0.1:${APP_PORT}
+            header {
+              Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+              X-Content-Type-Options "nosniff"
+              X-Frame-Options "DENY"
+              Referrer-Policy "strict-origin-when-cross-origin"
+            }
+          }
+          CADDY
+          # Reload Caddy to pick up changes
+          sudo systemctl reload caddy
           EOF

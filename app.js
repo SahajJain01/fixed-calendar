@@ -2,7 +2,7 @@
 
 var app = angular.module('ifc', []);
 
-app.controller('MainCtrl', function ($scope, $location, $anchorScroll) {
+app.controller('MainCtrl', ['$scope', '$location', '$anchorScroll', function ($scope, $location, $anchorScroll) {
     // Avoid sticky header overlap on anchor scroll (in px)
     $anchorScroll.yOffset = 64;
     $scope.years = [];
@@ -57,4 +57,4 @@ app.controller('MainCtrl', function ($scope, $location, $anchorScroll) {
     };
 
     init();
-});
+}]);

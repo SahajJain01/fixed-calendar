@@ -1,47 +1,46 @@
-# Fixed Calendar
+<div align="center">
 
-Simple static page visualizing a 13×28 International Fixed Calendar (IFC) with New Year Day(s). Built with AngularJS 1.x and Bootstrap styles.
+# Fixed Calendar (IFC)
+
+![Bun](https://img.shields.io/badge/Bun-1.x-000000?logo=bun&logoColor=white)
+![AngularJS](https://img.shields.io/badge/AngularJS-1.6-c3002f?logo=angular&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-4.5-7952B3?logo=bootstrap&logoColor=white)
+![Status](https://img.shields.io/badge/App-Static%20Site-2ea44f)
+![Visibility](https://img.shields.io/badge/Repo-Private-lightgrey)
+
+Interactive visual of the 13×28 International Fixed Calendar with New Year Day(s).
+
+</div>
+
+---
 
 ## Features
 
-- Scrolls to the current day-of-year on load.
-- Year navigation arrows jump to the same Gregorian month/day in the selected year (handles month length gracefully).
-- Highlights today in the current year.
+- Scrolls to the current day-of-year on load
+- Year navigation with graceful month/day handling
+- Highlights today in the current year
 
-## Run Locally
+## Requirements
 
-Option 1 — Bun (recommended):
+- Bun 1.x installed: https://bun.sh
 
-```bash
-bun run start
-# then open http://localhost:8080
-```
+## Scripts
 
-Option 2 — Node built-in static server (no deps):
+- Dev: `bun run dev` — serves from the repo root at `http://localhost:3000`.
+- Build: `bun run build` — outputs a production bundle to `dist/`.
+- Prod: `bun run prod` — builds then serves static files from `dist/`.
 
-```bash
-npm run start:node
-# then open http://localhost:8080
-```
-
-Option 3 — Python (if installed):
-
-```bash
-python -m http.server 8080
-# then open http://localhost:8080
-```
-
-Option 4 — http-server via npx (requires Node):
-
-```bash
-npx http-server -p 8080 -c-1
-```
+The server also supports `--root <dir>` or `STATIC_ROOT=<dir>` to choose a directory to serve.
 
 ## Notes
 
-- This is a static, client-only demo. No routing, animation, or sanitization features are used; Angular core is sufficient.
-- Day IDs 1–364 map to IFC month grid; 365 and 366 map to New Year Day(s).
+- Static, client-only demo; AngularJS core only (no routing/animation).
+- Day IDs 1–364 map to the 13 months; 365/366 are New Year Day(s).
 - Leap year logic uses the standard Gregorian rule.
+
+## Troubleshooting
+
+- AngularJS injector errors (e.g., Unknown provider) in production typically indicate missing minification-safe DI annotations. This project uses array annotations for controllers. You can also add `ng-strict-di` to the root tag in `index.html` for early detection: `<html lang="en" ng-app="ifc" ng-strict-di>`.
 
 ## Project Structure
 
@@ -49,3 +48,6 @@ npx http-server -p 8080 -c-1
 - `app.js` — AngularJS controller and logic
 - `assets/` — styles and libraries
 - `server.js` — minimal static web server
+- `scripts/build.mjs` — build to `dist/`
+- `scripts/prod.mjs` — build then serve from `dist/`
+

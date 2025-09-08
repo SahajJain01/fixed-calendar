@@ -2,8 +2,22 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const port = process.env.PORT || 8080;
-const root = __dirname;
+const port = process.env.PORT || 3000;
+
+// Determine static root: --root <dir> CLI arg, then STATIC_ROOT env, else current dir
+let root = __dirname;
+try {
+  const args = process.argv.slice(2);
+  const idx = args.indexOf('--root');
+  if (idx !== -1 && args[idx + 1]) {
+    root = path.resolve(args[idx + 1]);
+  } else if (process.env.STATIC_ROOT) {
+    root = path.resolve(process.env.STATIC_ROOT);
+  }
+} catch (_) {
+  // Fallback to __dirname if parsing fails
+  root = __dirname;
+}
 
 const TYPES = {
   '.html': 'text/html; charset=UTF-8',

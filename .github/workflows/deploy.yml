@@ -1,0 +1,84 @@
+name: deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Build flake package
+        id: build
+        run: |
+          set -euo pipefail
+          out_path=$(nix build --no-link --print-out-paths .#fixed-calendar)
+          echo "out_path=$out_path" >> "$GITHUB_OUTPUT"
+          echo "Built: $out_path"
+
+      - name: Prepare SSH
+        env:
+          SSH_KEY: ${{ secrets.NIX_SSH_KEY }}
+          SSH_HOST: ${{ secrets.NIX_SSH_HOST }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Copy closure to server
+        env:
+          SSH_HOST: ${{ secrets.NIX_SSH_HOST }}
+          SSH_USER: ${{ secrets.NIX_SSH_USER }}
+        run: |
+          set -euo pipefail
+          export NIX_SSHOPTS="-i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"
+          nix copy --to ssh://$SSH_USER@$SSH_HOST "${{ steps.build.outputs.out_path }}"
+
+      - name: Update user systemd service and restart
+        env:
+          SSH_HOST: ${{ secrets.NIX_SSH_HOST }}
+          SSH_USER: ${{ secrets.NIX_SSH_USER }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+          APP_PORT: ${{ secrets.APP_PORT }}
+          OUT_PATH: ${{ steps.build.outputs.out_path }}
+        run: |
+          set -euo pipefail
+          export SSH="ssh -i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"
+          $SSH "$SSH_USER@$SSH_HOST" bash -s <<'EOF'
+          set -euo pipefail
+          APP_NAME="$APP_NAME"
+          APP_PORT="$APP_PORT"
+          OUT_PATH="$OUT_PATH"
+          UNIT_DIR="$HOME/.config/systemd/user"
+          mkdir -p "$UNIT_DIR"
+          cat > "$UNIT_DIR/${APP_NAME}.service" <<UNIT
+          [Unit]
+          Description=${APP_NAME} (Fixed Calendar Bun app)
+          After=network.target
+
+          [Service]
+          Environment=PORT=${APP_PORT}
+          ExecStart=${OUT_PATH}/bin/fixed-calendar-start
+          Restart=always
+
+          [Install]
+          WantedBy=default.target
+          UNIT
+
+          systemctl --user daemon-reload
+          systemctl --user enable --now "$APP_NAME"
+          systemctl --user restart "$APP_NAME"
+          systemctl --user status "$APP_NAME" --no-pager -l || true
+          EOF
+

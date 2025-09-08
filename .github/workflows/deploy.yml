@@ -17,30 +17,17 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Build flake package (aarch64-linux)
-        id: build
-        run: |
-          set -euo pipefail
-          # Build the ARM package so it matches your NixOS server
-          out_path=$(nix build --no-link --print-out-paths .#packages.aarch64-linux.fixed-calendar)
-          echo "out_path=$out_path" >> "$GITHUB_OUTPUT"
-          echo "Built: $out_path"
-
-      - name: Sign build outputs (recursive)
+      - name: Remote build on server (aarch64)
+        id: remote_build
         env:
-          NIX_SIGNING_KEY: ${{ secrets.NIX_SIGNING_KEY }}
+          SSH_HOST: ${{ secrets.NIX_SSH_HOST }}
+          SSH_USER: ${{ secrets.NIX_SSH_USER }}
         run: |
           set -euo pipefail
-          if [ -z "${NIX_SIGNING_KEY:-}" ]; then
-            echo "NIX_SIGNING_KEY not set; skipping signing step." >&2
-          else
-            printf "%s" "$NIX_SIGNING_KEY" > ci-signing.key
-            chmod 600 ci-signing.key
-            nix store sign --recursive --key-file ci-signing.key "${{ steps.build.outputs.out_path }}"
-            echo "Signed store path and closure."
-            echo "Public key (add to server trusted-public-keys):"
-            nix key convert-secret-to-public < ci-signing.key | sed 's/^/  /'
-          fi
+          # Build directly in the server's Nix store via ssh-ng
+          out_path=$(nix build --no-link --print-out-paths --store ssh-ng://$SSH_USER@$SSH_HOST .#fixed-calendar)
+          echo "out_path=$out_path" >> "$GITHUB_OUTPUT"
+          echo "Remote built: $out_path"
 
       - name: Prepare SSH
         env:
@@ -53,14 +40,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      - name: Copy closure to server
-        env:
-          SSH_HOST: ${{ secrets.NIX_SSH_HOST }}
-          SSH_USER: ${{ secrets.NIX_SSH_USER }}
-        run: |
-          set -euo pipefail
-          export NIX_SSHOPTS="-i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"
-          nix copy --to ssh-ng://$SSH_USER@$SSH_HOST "${{ steps.build.outputs.out_path }}"
+      # Copy step not needed when building on the server
 
       - name: Update user systemd service and restart
         env:
@@ -68,7 +48,7 @@ jobs:
           SSH_USER: ${{ secrets.NIX_SSH_USER }}
           APP_NAME: ${{ secrets.APP_NAME }}
           APP_PORT: ${{ secrets.APP_PORT }}
-          OUT_PATH: ${{ steps.build.outputs.out_path }}
+          OUT_PATH: ${{ steps.remote_build.outputs.out_path }}
         run: |
           set -euo pipefail
           export SSH="ssh -i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=yes"

@@ -7,12 +7,12 @@
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-4.5-7952B3?logo=bootstrap&logoColor=white)
 ![Nix](https://img.shields.io/badge/Nix-Flake-7e7eff?logo=nixos&logoColor=white)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
-[![Deploy Status](https://github.com/sahajjain01/fixed-calendar/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/sahajjain01/fixed-calendar/actions/workflows/deploy.yml)
+[![Deploy Status](https://github.com/sahajjain01/fixed-calendar/actions/workflows/docker-publish.yml/badge.svg?branch=main)](https://github.com/sahajjain01/fixed-calendar/actions/workflows/docker-publish.yml)
 [![Last Commit](https://img.shields.io/github/last-commit/sahajjain01/fixed-calendar)](https://github.com/sahajjain01/fixed-calendar/commits/main)
 
 [![Live](https://img.shields.io/badge/Live-calendar.sahajjain.com-2ea44f)](https://calendar.sahajjain.com)
 
-Interactive visual of the 13×28 International Fixed Calendar with New Year Day(s). Production‑ready build + deploy with Nix Flakes and GitHub Actions.
+Interactive visual of the 13A-28 International Fixed Calendar with New Year Day(s). Production-ready build and deploy with Docker, Nix Flakes, and GitHub Actions.
 
 </div>
 
@@ -23,15 +23,16 @@ Interactive visual of the 13×28 International Fixed Calendar with New Year Day(
 - Scrolls to the current day-of-year on load
 - Year navigation with graceful month/day handling
 - Highlights today in the current year
-- Zero‑dependency static server (Node http) with strict path safety
-- Minification‑safe AngularJS DI for production builds
+- Zero-dependency static server (Node http) with strict path safety
+- Minification-safe AngularJS DI for production builds
 
 ## Tech Stack
 
 - Bun 1.x (build/run scripts)
 - AngularJS 1.6 + Bootstrap 4
-- Nix Flakes (packaging) + GitHub Actions (deploy)
-- Systemd user service (server‑side runtime)
+- Docker + GHCR (image builds)
+- Nix Flakes + deploy-rs (deploy)
+- Systemd user or system service (server-side runtime, via your NixOS config)
 
 ## Local Scripts
 
@@ -41,56 +42,50 @@ Interactive visual of the 13×28 International Fixed Calendar with New Year Day(
 
 The server also supports `--root <dir>` or `STATIC_ROOT=<dir>` to choose a directory to serve.
 
-## Production Pipeline (Nix + GitHub Actions)
+## CI/CD (Docker + deploy-rs)
 
-- Nix flake packages the app and emits a start wrapper: `fixed-calendar-start`.
-- GitHub Actions remote‑builds on the target ARM (aarch64) NixOS server via `ssh-ng` to match architecture.
-- The workflow writes/updates a `systemd --user` unit and restarts the service.
+- GitHub Actions builds a multi-arch Docker image (amd64 + arm64) and pushes to GHCR.
+- After a successful push, a dependent deploy job runs deploy-rs over SSH to update the server (NixOS switch).
+- Deploy evaluates the flake for the ARM target:
+  - `nix run --system aarch64-linux .#deploy -- "$NIX_SSH_USER@$NIX_SSH_HOST"`
 
-Workflow file: `.github/workflows/deploy.yml`
+Workflow file: `.github/workflows/docker-publish.yml`
+
+Docker image:
+- Registry: `ghcr.io/<owner>/<repo>`
+- Tags: `latest` (on main), `sha-<commit>`, and release tags `v*`.
 
 Required repository secrets:
 - `NIX_SSH_HOST`: server hostname/IP
-- `NIX_SSH_USER`: deploy user (e.g., `github`)
-- `NIX_SSH_KEY`: deploy user’s private key (ED25519)
-- `APP_NAME`: systemd user service name (e.g., `fixedcalendar`)
-- `APP_PORT`: port to serve on (e.g., `3000`)
- - `APP_DOMAIN`: domain routed to this app (e.g., `calendar.example.com`)
+- `NIX_SSH_USER`: SSH user used for deployment
+- `NIX_SSH_KEY`: private key for that user (PEM content)
 
-Server prerequisites (one‑time):
-- Enable user lingering so the service runs without a login: `sudo loginctl enable-linger <user>`
-- Open firewall for `${APP_PORT}` if exposing externally.
+Expectations for deploy-rs:
+- This repo’s Nix flake should provide an app or package `.#deploy` that uses deploy-rs to switch the target host.
+- If your deploy flake lives elsewhere, adjust the workflow command to reference it (e.g., `nix run github:owner/infra#deploy -- "$NIX_SSH_USER@$NIX_SSH_HOST"`).
 
-Deploy steps:
-- Push to `main` or re‑run the workflow in Actions.
-- The job remote‑builds the flake on the server and restarts `${APP_NAME}`.
+Server prerequisites:
+- NixOS host reachable via SSH with the above user and key.
+- deploy-rs available in the flake evaluation and permissions to perform the system switch.
 
-Verify on server (as deploy user):
-- `systemctl --user status ${APP_NAME} --no-pager`
-- `journalctl --user -u ${APP_NAME} -e --no-pager`
-- `curl -fsS http://127.0.0.1:${APP_PORT} | head -n1`
+## Reverse Proxy
 
-## Reverse Proxy (Caddy)
-
-- NixOS enables Caddy and imports per-app vhosts from `/srv/caddy/conf.d/*.caddy`.
-- The deploy workflow writes `/srv/caddy/conf.d/${APP_NAME}.caddy` with:
-  - Host: `${APP_DOMAIN}` (from GitHub Secret)
-  - Upstream: `reverse_proxy 127.0.0.1:${APP_PORT}` (private per-app port)
-  - Compression and basic security headers
-- Ensure DNS for `${APP_DOMAIN}` points to your server. Caddy will request/renew TLS automatically using the email configured in NixOS.
+- Termination/proxy (e.g., Caddy or Nginx) should be configured in your NixOS configuration managed by deploy-rs.
+- Point DNS at your server and expose the internal service defined by your flake.
 
 ## Troubleshooting
 
-- AngularJS injector errors (e.g., Unknown provider) in production indicate missing minification‑safe DI. This project uses array annotations; you can also enable `ng-strict-di` on the root tag.
-- Exec format errors on ARM were addressed by building on the target host and using target‑arch Bun at runtime via `flake.nix`.
+- AngularJS injector errors (e.g., Unknown provider) in production indicate missing minification-safe DI. This project uses array annotations; you can also enable `ng-strict-di` on the root tag.
+- Build/runtime differences on ARM are handled by building a multi-arch image and evaluating the flake for `aarch64-linux` during deploy.
 
 ## Architecture at a Glance
 
 - `index.html` — markup and layout
-- `app.js` — AngularJS controller and logic (DI‑safe)
+- `app.js` — AngularJS controller and logic (DI-safe)
 - `assets/` — styles, icons, AngularJS lib
-- `server.js` — minimal static web server with content‑type mapping
+- `server.js` — minimal static web server with content-type mapping
 - `scripts/build.mjs` — Bun build + asset copy to `dist/`
 - `scripts/prod.mjs` — Build then run server against `dist/`
-- `flake.nix` — Nix package and start wrapper
-- `.github/workflows/deploy.yml` — CI/CD deploy to NixOS
+- `Dockerfile` — multi-arch image build
+- `.github/workflows/docker-publish.yml` — CI/CD build + deploy (deploy-rs)
+

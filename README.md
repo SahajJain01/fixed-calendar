@@ -5,87 +5,152 @@
 ![Bun](https://img.shields.io/badge/Bun-1.x-000000?logo=bun&logoColor=white)
 ![AngularJS](https://img.shields.io/badge/AngularJS-1.6-c3002f?logo=angular&logoColor=white)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-4.5-7952B3?logo=bootstrap&logoColor=white)
-![Nix](https://img.shields.io/badge/Nix-Flake-7e7eff?logo=nixos&logoColor=white)
+![Docker](https://img.shields.io/badge/Container-GHCR-2496ED?logo=docker&logoColor=white)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
-[![Deploy Status](https://github.com/sahajjain01/fixed-calendar/actions/workflows/docker-publish.yml/badge.svg?branch=main)](https://github.com/sahajjain01/fixed-calendar/actions/workflows/docker-publish.yml)
+[![Build & Deploy](https://github.com/sahajjain01/fixed-calendar/actions/workflows/build-push-deploy.yml/badge.svg?branch=main)](https://github.com/sahajjain01/fixed-calendar/actions/workflows/build-push-deploy.yml)
 [![Last Commit](https://img.shields.io/github/last-commit/sahajjain01/fixed-calendar)](https://github.com/sahajjain01/fixed-calendar/commits/main)
 
-[![Live](https://img.shields.io/badge/Live-calendar.sahajjain.com-2ea44f)](https://calendar.sahajjain.com)
+<!-- Demo badge: update link if you host it -->
+[![Live Demo](https://img.shields.io/badge/Live-Demo-2ea44f)](#-screenshots)
 
-Interactive visual of the 13A-28 International Fixed Calendar with New Year Day(s). Production-ready build and deploy with Docker, Nix Flakes, and GitHub Actions.
+Interactive visual of the 13×28 International Fixed Calendar (with Sol and Year Day) — small, fast, and deployable anywhere via Docker. Built with Bun, served via a tiny Node HTTP server.
 
 </div>
 
 ---
 
-## Features
+## Highlights
 
-- Scrolls to the current day-of-year on load
-- Year navigation with graceful month/day handling
-- Highlights today in the current year
-- Zero-dependency static server (Node http) with strict path safety
-- Minification-safe AngularJS DI for production builds
+- Lightning-fast static build with Bun
+- Auto-scrolls to “today” on load
+- Simple year jumping and “Go to Today”
+- Zero-framework backend (just Node `http`)
+- Multi-arch Docker image (amd64 + arm64)
+
+## Screenshots
+
+<!-- Drop your own screenshots in docs/ and update paths -->
+<p align="center">
+  <img src="docs/hero.png" alt="IFC calendar – hero" width="800" />
+  <br />
+  <em>Add a screenshot at docs/hero.png</em>
+  <br /><br />
+  <img src="docs/mobile.png" alt="IFC calendar – mobile view" width="300" />
+  <img src="docs/today-highlight.png" alt="IFC calendar – today highlight" width="300" />
+  <br />
+  <em>Add optional mobile/today screenshots at docs/mobile.png and docs/today-highlight.png</em>
+  <br />
+</p>
 
 ## Tech Stack
 
-- Bun 1.x (build/run scripts)
+- Bun 1.x (build + scripts)
 - AngularJS 1.6 + Bootstrap 4
-- Docker + GHCR (image builds)
-- Nix Flakes + deploy-rs (deploy)
-- Systemd user or system service (server-side runtime, via your NixOS config)
+- Docker + GHCR (container registry)
+- GitHub Actions (CI/CD)
+- NixOS host (runtime target only — no deploy-rs)
 
-## Local Scripts
+## Run Locally (Bun)
 
-- Dev: `bun run dev` — serves from the repo root at `http://localhost:3000`.
-- Build: `bun run build` — outputs a production bundle to `dist/`.
-- Prod: `bun run prod` — builds then serves static files from `dist/`.
+- Dev: `bun run dev` – serves from repo root at `http://localhost:3000`.
+- Build: `bun run build` – outputs a production bundle to `dist/`.
+- Prod: `bun run prod` – builds then serves from `dist/`.
 
-The server also supports `--root <dir>` or `STATIC_ROOT=<dir>` to choose a directory to serve.
+Server supports `--root <dir>` or `STATIC_ROOT=<dir>` to choose the directory to serve.
 
-## CI/CD (Docker + deploy-rs)
+## Docker
 
-- GitHub Actions builds a multi-arch Docker image (amd64 + arm64) and pushes to GHCR.
-- After a successful push, a dependent deploy job runs deploy-rs over SSH to update the server (NixOS switch).
-- Deploy evaluates the flake for the ARM target:
-  - `nix run --system aarch64-linux .#deploy -- "$NIX_SSH_USER@$NIX_SSH_HOST"`
+Build locally:
 
-Workflow file: `.github/workflows/docker-publish.yml`
+```sh
+docker build -t ghcr.io/<owner>/<repo>:dev .
+docker run --rm -p 3000:3000 ghcr.io/<owner>/<repo>:dev
+```
 
-Docker image:
-- Registry: `ghcr.io/<owner>/<repo>`
-- Tags: `latest` (on main), `sha-<commit>`, and release tags `v*`.
+Multi-arch build in CI (already configured): `linux/amd64, linux/arm64`.
+
+## CI/CD (GitHub Actions → GHCR → NixOS)
+
+- On push to `main`, CI builds and pushes a multi-arch image to GHCR.
+- CI then SSHes to your NixOS host and restarts a systemd service: `docker-calendar`.
+- If your service uses `:latest`, ensure the host pulls before restart (sample below).
+
+Workflow file: `.github/workflows/build-push-deploy.yml`
 
 Required repository secrets:
+
 - `NIX_SSH_HOST`: server hostname/IP
 - `NIX_SSH_USER`: SSH user used for deployment
-- `NIX_SSH_KEY`: private key for that user (PEM content)
+- `NIX_SSH_KEY`: private key for that user (PEM content, no passphrase)
 
-Expectations for deploy-rs:
-- This repo’s Nix flake should provide an app or package `.#deploy` that uses deploy-rs to switch the target host.
-- If your deploy flake lives elsewhere, adjust the workflow command to reference it (e.g., `nix run github:owner/infra#deploy -- "$NIX_SSH_USER@$NIX_SSH_HOST"`).
+## NixOS: systemd service (example)
 
-Server prerequisites:
-- NixOS host reachable via SSH with the above user and key.
-- deploy-rs available in the flake evaluation and permissions to perform the system switch.
+To always run the latest pushed image, include a pull in your unit or pre-start script:
 
-## Reverse Proxy
+```ini
+[Unit]
+Description=Fixed Calendar (Docker)
+After=network-online.target docker.service
+Wants=network-online.target
 
-- Termination/proxy (e.g., Caddy or Nginx) should be configured in your NixOS configuration managed by deploy-rs.
-- Point DNS at your server and expose the internal service defined by your flake.
+[Service]
+Restart=always
+Environment=IMAGE=ghcr.io/<owner>/<repo>:latest
+ExecStartPre=/usr/bin/docker login ghcr.io -u <gh-username> -p <ghcr-token>
+ExecStartPre=/usr/bin/docker pull %E{IMAGE}
+ExecStart=/usr/bin/docker run --rm \
+  --name docker-calendar \
+  -p 3000:3000 \
+  %E{IMAGE}
+ExecStop=/usr/bin/docker stop docker-calendar
 
-## Troubleshooting
+[Install]
+WantedBy=multi-user.target
+```
 
-- AngularJS injector errors (e.g., Unknown provider) in production indicate missing minification-safe DI. This project uses array annotations; you can also enable `ng-strict-di` on the root tag.
-- Build/runtime differences on ARM are handled by building a multi-arch image and evaluating the flake for `aarch64-linux` during deploy.
+Then enable and start:
 
-## Architecture at a Glance
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now docker-calendar
+```
 
-- `index.html` — markup and layout
-- `app.js` — AngularJS controller and logic (DI-safe)
-- `assets/` — styles, icons, AngularJS lib
-- `server.js` — minimal static web server with content-type mapping
-- `scripts/build.mjs` — Bun build + asset copy to `dist/`
-- `scripts/prod.mjs` — Build then run server against `dist/`
-- `Dockerfile` — multi-arch image build
-- `.github/workflows/docker-publish.yml` — CI/CD build + deploy (deploy-rs)
+Tip: You can skip `docker login` if your image is public.
+
+## Project Structure
+
+```
+.
+├─ index.html            # Markup and layout
+├─ app.js                # AngularJS controller and logic
+├─ assets/               # Styles, icons, AngularJS lib
+├─ server.js             # Minimal static server (Node http)
+├─ scripts/
+│  ├─ build.mjs         # Bun build + asset copy to dist/
+│  └─ prod.mjs          # Build then serve dist/
+├─ Dockerfile            # Multi-arch container build (Bun base)
+└─ .github/workflows/
+   └─ build-push-deploy.yml # CI build/push + remote restart
+```
+
+## How It Works (Mermaid)
+
+```mermaid
+flowchart LR
+  A[Commit to main] --> B[GitHub Actions]
+  B --> C[Buildx: amd64+arm64]
+  C --> D[Push to GHCR]
+  D --> E[SSH to NixOS host]
+  E --> F[systemctl restart docker-calendar]
+  F --> G[Container serves dist on :3000]
+```
+
+## Notes
+
+- This project does not use deploy-rs anymore; deployment is simple SSH + systemd restart.
+- If you don’t see your latest HTML changes in prod, make sure the host pulls the new image before restart, or pin a unique tag per deploy (e.g., the commit SHA).
+
+## License
+
+MIT (or your preferred license)
 

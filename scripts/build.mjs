@@ -81,7 +81,7 @@ export async function build() {
     await copyDir(assetsSrc, path.join(dist, 'assets'));
   }
 
-  console.log('Build complete →', dist);
+  console.log('Build complete:', dist);
 }
 
 // If run directly
@@ -91,3 +91,4 @@ if (import.meta.main) {
     process.exitCode = 1;
   });
 }
+

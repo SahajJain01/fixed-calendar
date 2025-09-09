@@ -11,7 +11,7 @@
 [![Last Commit](https://img.shields.io/github/last-commit/sahajjain01/fixed-calendar)](https://github.com/sahajjain01/fixed-calendar/commits/main)
 
 <!-- Demo badge: update link if you host it -->
-[![Live Demo](https://img.shields.io/badge/Live-Demo-2ea44f)](#-screenshots)
+[![Live](https://img.shields.io/badge/Live-Demo-2ea44f)](https://calendar.sahajjain.com)
 
 Interactive visual of the 13×28 International Fixed Calendar (with Sol and Year Day) — small, fast, and deployable anywhere via Docker. Built with Bun, served via a tiny Node HTTP server.
 
@@ -26,21 +26,6 @@ Interactive visual of the 13×28 International Fixed Calendar (with Sol and Year
 - Simple year jumping and “Go to Today”
 - Zero-framework backend (just Node `http`)
 - Multi-arch Docker image (amd64 + arm64)
-
-## Screenshots
-
-<!-- Drop your own screenshots in docs/ and update paths -->
-<p align="center">
-  <img src="docs/hero.png" alt="IFC calendar – hero" width="800" />
-  <br />
-  <em>Add a screenshot at docs/hero.png</em>
-  <br /><br />
-  <img src="docs/mobile.png" alt="IFC calendar – mobile view" width="300" />
-  <img src="docs/today-highlight.png" alt="IFC calendar – today highlight" width="300" />
-  <br />
-  <em>Add optional mobile/today screenshots at docs/mobile.png and docs/today-highlight.png</em>
-  <br />
-</p>
 
 ## Tech Stack
 

@@ -48,8 +48,8 @@ Server supports `--root <dir>` or `STATIC_ROOT=<dir>` to choose the directory to
 Build locally:
 
 ```sh
-docker build -t ghcr.io/<owner>/<repo>:dev .
-docker run --rm -p 3000:3000 ghcr.io/<owner>/<repo>:dev
+docker build -t ghcr.io/SahajJain01/fixed-calendar:dev .
+docker run --rm -p 3000:3000 ghcr.io/SahajJain01/fixed-calendar:dev
 ```
 
 Multi-arch build in CI (already configured): `linux/amd64, linux/arm64`.

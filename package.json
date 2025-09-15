@@ -6,5 +6,8 @@
     "dev": "bun server.js",
     "build": "bun scripts/build.mjs",
     "prod": "bun scripts/prod.mjs"
+  },
+  "dependencies": {
+    "prom-client": "^15.1.3"
   }
 }

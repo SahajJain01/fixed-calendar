@@ -10,6 +10,11 @@ WORKDIR /app
 
 COPY --from=builder /app/dist ./dist
 COPY server.js ./server.js
+COPY metrics.js ./metrics.js
+COPY package.json ./package.json
+
+# Install only production deps (prom-client)
+RUN bun install --production
 
 ENV NODE_ENV=production \
     PORT=3000

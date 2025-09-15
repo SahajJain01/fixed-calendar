@@ -139,3 +139,12 @@ flowchart LR
 
 MIT (or your preferred license)
 
+## Metrics
+
+- Endpoint: Prometheus scrapes `GET /metrics` on the same HTTP port.
+- Enable/disable: `METRICS_ENABLED=true|false` (default `true`). When disabled, `/metrics` returns 404 and instrumentation is off.
+- Default labels: `service` = `APP_NAME` env or `package.json` name.
+- Metrics: default process/node metrics plus `http_requests_total` and `http_request_duration_seconds` labeled by `method`, `route`, `status`, `service`.
+- Headers: `Content-Type` from Prometheus registry; `Cache-Control: no-store`.
+- Security: Do not expose `/metrics` to the public internet; restrict at your reverse proxy and allow only your Prometheus to access it.
+

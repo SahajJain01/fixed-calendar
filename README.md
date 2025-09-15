@@ -147,4 +147,5 @@ MIT (or your preferred license)
 - Metrics: default process/node metrics plus `http_requests_total` and `http_request_duration_seconds` labeled by `method`, `route`, `status`, `service`.
 - Headers: `Content-Type` from Prometheus registry; `Cache-Control: no-store`.
 - Security: Do not expose `/metrics` to the public internet; restrict at your reverse proxy and allow only your Prometheus to access it.
+- Grafana dashboard: https://grafana.sahajjain.com/d/bun-apps-overview/
 

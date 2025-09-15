@@ -135,10 +135,6 @@ flowchart LR
 - This project does not use deploy-rs anymore; deployment is simple SSH + systemd restart.
 - If you don’t see your latest HTML changes in prod, make sure the host pulls the new image before restart, or pin a unique tag per deploy (e.g., the commit SHA).
 
-## License
-
-MIT (or your preferred license)
-
 ## Metrics
 
 - Endpoint: Prometheus scrapes `GET /metrics` on the same HTTP port.
